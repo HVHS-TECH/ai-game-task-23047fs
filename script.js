@@ -6,10 +6,11 @@ document.addEventListener("keydown", e => keys[e.code] = true);
 document.addEventListener("keyup", e => keys[e.code] = false);
 
 let outlineColor = "white"; // Default outline color
+let paused = false; // Pause state
 
-// Create UI controls for color selection
+// Create UI controls for color selection and pause button
 document.body.insertAdjacentHTML("beforeend", `
-  <div style="position: absolute; top: 10px; right: 10px; background: black; padding: 10px; border: 1px solid white; color: white;">
+  <div style="position: absolute; top: 10px; right: 10px; background: black; padding: 10px; border: 1px solid white; color: white; display: flex; flex-direction: column; gap: 10px;">
     <label for="colorSelect">Outline Color:</label>
     <select id="colorSelect">
       <option value="white">White</option>
@@ -18,11 +19,18 @@ document.body.insertAdjacentHTML("beforeend", `
       <option value="blue">Blue</option>
       <option value="yellow">Yellow</option>
     </select>
+    <button id="pauseBtn">Pause</button>
   </div>
 `);
 
 document.getElementById("colorSelect").addEventListener("change", (e) => {
   outlineColor = e.target.value;
+});
+
+const pauseBtn = document.getElementById("pauseBtn");
+pauseBtn.addEventListener("click", () => {
+  paused = !paused;
+  pauseBtn.textContent = paused ? "Resume" : "Pause";
 });
 
 function randRange(min, max) {
@@ -159,56 +167,57 @@ let difficultyLevel = 1;
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  ship.update();
-  ship.draw();
+  if (!paused) {
+    ship.update();
 
-  if (keys["Space"]) {
-    ship.shoot();
-  }
+    if (keys["Space"]) {
+      ship.shoot();
+    }
 
-  bullets = bullets.filter(b => b.life > 0);
-  bullets.forEach(b => {
-    b.update();
-    b.draw();
-  });
+    bullets = bullets.filter(b => b.life > 0);
+    bullets.forEach(b => b.update());
 
-  for (let i = asteroids.length - 1; i >= 0; i--) {
-    const a = asteroids[i];
-    a.update();
-    a.draw();
+    for (let i = asteroids.length - 1; i >= 0; i--) {
+      const a = asteroids[i];
+      a.update();
 
-    for (let j = bullets.length - 1; j >= 0; j--) {
-      if (collision(a, bullets[j])) {
-        bullets.splice(j, 1);
-        asteroids.splice(i, 1);
-        if (a.size > 20) {
-          asteroids.push(new Asteroid(a.x, a.y, a.size / 2, difficultyLevel));
-          asteroids.push(new Asteroid(a.x, a.y, a.size / 2, difficultyLevel));
+      for (let j = bullets.length - 1; j >= 0; j--) {
+        if (collision(a, bullets[j])) {
+          bullets.splice(j, 1);
+          asteroids.splice(i, 1);
+          if (a.size > 20) {
+            asteroids.push(new Asteroid(a.x, a.y, a.size / 2, difficultyLevel));
+            asteroids.push(new Asteroid(a.x, a.y, a.size / 2, difficultyLevel));
+          }
+          break;
         }
-        break;
+      }
+
+      if (collision(a, ship)) {
+        alert("Game Over!");
+        window.location.reload();
       }
     }
 
-    if (collision(a, ship)) {
-      alert("Game Over!");
-      window.location.reload();
+    // Increase difficulty every 10 seconds (~600 frames at 60fps)
+    frames++;
+    if (frames % 600 === 0) {
+      difficultyLevel++;
     }
+
+    // Spawn new asteroids if below threshold and cooldown passed
+    if (asteroids.length < 3 && spawnCooldown <= 0) {
+      spawnAsteroids(4 + difficultyLevel, difficultyLevel);
+      spawnCooldown = 120;
+    }
+
+    if (spawnCooldown > 0) spawnCooldown--;
   }
 
-  // Increase difficulty every 10 seconds (~600 frames at 60fps)
-  frames++;
-  if (frames % 600 === 0) {
-    difficultyLevel++;
-  }
-
-  // Spawn new asteroids if below threshold and cooldown passed
-  if (asteroids.length < 3 && spawnCooldown <= 0) {
-    // Spawn more asteroids as difficulty increases
-    spawnAsteroids(4 + difficultyLevel, difficultyLevel);
-    spawnCooldown = 120; // cooldown ~2 seconds
-  }
-
-  if (spawnCooldown > 0) spawnCooldown--;
+  // Draw everything (even when paused)
+  ship.draw();
+  bullets.forEach(b => b.draw());
+  asteroids.forEach(a => a.draw());
 
   requestAnimationFrame(update);
 }
