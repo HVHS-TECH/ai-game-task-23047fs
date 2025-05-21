@@ -5,6 +5,26 @@ const keys = {};
 document.addEventListener("keydown", e => keys[e.code] = true);
 document.addEventListener("keyup", e => keys[e.code] = false);
 
+let outlineColor = "white"; // Default outline color
+
+// Create UI controls for color selection
+document.body.insertAdjacentHTML("beforeend", `
+  <div style="position: absolute; top: 10px; right: 10px; background: black; padding: 10px; border: 1px solid white; color: white;">
+    <label for="colorSelect">Outline Color:</label>
+    <select id="colorSelect">
+      <option value="white">White</option>
+      <option value="red">Red</option>
+      <option value="green">Green</option>
+      <option value="blue">Blue</option>
+      <option value="yellow">Yellow</option>
+    </select>
+  </div>
+`);
+
+document.getElementById("colorSelect").addEventListener("change", (e) => {
+  outlineColor = e.target.value;
+});
+
 function randRange(min, max) {
   return Math.random() * (max - min) + min;
 }
@@ -45,7 +65,7 @@ class Ship {
     ctx.lineTo(-10, 10);
     ctx.lineTo(-10, -10);
     ctx.closePath();
-    ctx.strokeStyle = "white";
+    ctx.strokeStyle = outlineColor;
     ctx.stroke();
     ctx.restore();
   }
@@ -81,7 +101,7 @@ class Bullet {
   draw() {
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.fillStyle = "white";
+    ctx.fillStyle = outlineColor;
     ctx.fill();
   }
 }
@@ -108,7 +128,7 @@ class Asteroid {
   draw() {
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.strokeStyle = "white";
+    ctx.strokeStyle = outlineColor;
     ctx.stroke();
   }
 }
@@ -171,9 +191,8 @@ function update() {
     }
   }
 
-  // 🔄 Add this to keep the game going
   if (asteroids.length < 3) {
-    spawnAsteroids(5); // You can scale this up for difficulty
+    spawnAsteroids(5);
   }
 
   requestAnimationFrame(update);
