@@ -171,6 +171,11 @@ function update() {
     }
   }
 
+  // 🔄 Add this to keep the game going
+  if (asteroids.length < 3) {
+    spawnAsteroids(5); // You can scale this up for difficulty
+  }
+
   requestAnimationFrame(update);
 }
 
