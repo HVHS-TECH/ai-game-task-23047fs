@@ -107,14 +107,14 @@ class Bullet {
 }
 
 class Asteroid {
-  constructor(x, y, size = 40) {
+  constructor(x, y, size = 40, speedMultiplier = 1) {
     this.x = x;
     this.y = y;
     this.size = size;
     this.radius = size;
     this.vel = {
-      x: randRange(-1.5, 1.5),
-      y: randRange(-1.5, 1.5),
+      x: randRange(-1.5, 1.5) * speedMultiplier,
+      y: randRange(-1.5, 1.5) * speedMultiplier,
     };
   }
 
@@ -137,11 +137,11 @@ const ship = new Ship();
 let bullets = [];
 let asteroids = [];
 
-function spawnAsteroids(count = 5) {
+function spawnAsteroids(count = 5, speedMultiplier = 1) {
   for (let i = 0; i < count; i++) {
     const x = randRange(0, canvas.width);
     const y = randRange(0, canvas.height);
-    asteroids.push(new Asteroid(x, y));
+    asteroids.push(new Asteroid(x, y, 40, speedMultiplier));
   }
 }
 
@@ -153,6 +153,8 @@ function collision(a, b) {
 }
 
 let spawnCooldown = 0;
+let frames = 0;
+let difficultyLevel = 1;
 
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -180,8 +182,8 @@ function update() {
         bullets.splice(j, 1);
         asteroids.splice(i, 1);
         if (a.size > 20) {
-          asteroids.push(new Asteroid(a.x, a.y, a.size / 2));
-          asteroids.push(new Asteroid(a.x, a.y, a.size / 2));
+          asteroids.push(new Asteroid(a.x, a.y, a.size / 2, difficultyLevel));
+          asteroids.push(new Asteroid(a.x, a.y, a.size / 2, difficultyLevel));
         }
         break;
       }
@@ -193,10 +195,17 @@ function update() {
     }
   }
 
-  // Spawn new asteroids only if cooldown expired
+  // Increase difficulty every 10 seconds (~600 frames at 60fps)
+  frames++;
+  if (frames % 600 === 0) {
+    difficultyLevel++;
+  }
+
+  // Spawn new asteroids if below threshold and cooldown passed
   if (asteroids.length < 3 && spawnCooldown <= 0) {
-    spawnAsteroids(5);
-    spawnCooldown = 120; // cooldown ~2 seconds (60fps)
+    // Spawn more asteroids as difficulty increases
+    spawnAsteroids(4 + difficultyLevel, difficultyLevel);
+    spawnCooldown = 120; // cooldown ~2 seconds
   }
 
   if (spawnCooldown > 0) spawnCooldown--;
