@@ -5,26 +5,48 @@ const keys = {};
 document.addEventListener("keydown", e => keys[e.code] = true);
 document.addEventListener("keyup", e => keys[e.code] = false);
 
-let outlineColor = "white"; // Default outline color
-let paused = false; // Pause state
+let outlineColor = "white"; // default outline color
+let rainbowHue = 0;
+let isRainbow = false;
+let paused = false;
 
-// Create UI controls for color selection and pause button
-document.body.insertAdjacentHTML("beforeend", `
-  <div style="position: absolute; top: 10px; right: 10px; background: black; padding: 10px; border: 1px solid white; color: white; display: flex; flex-direction: column; gap: 10px;">
-    <label for="colorSelect">Outline Color:</label>
-    <select id="colorSelect">
-      <option value="white">White</option>
-      <option value="red">Red</option>
-      <option value="green">Green</option>
-      <option value="blue">Blue</option>
-      <option value="yellow">Yellow</option>
-    </select>
-    <button id="pauseBtn">Pause</button>
-  </div>
-`);
+// Add UI controls dynamically using JS
+const controlDiv = document.createElement("div");
+controlDiv.style.position = "absolute";
+controlDiv.style.top = "10px";
+controlDiv.style.right = "10px";
+controlDiv.style.background = "black";
+controlDiv.style.padding = "10px";
+controlDiv.style.border = "1px solid white";
+controlDiv.style.color = "white";
+controlDiv.style.display = "flex";
+controlDiv.style.flexDirection = "column";
+controlDiv.style.gap = "10px";
+controlDiv.style.userSelect = "none";
+controlDiv.style.fontFamily = "monospace";
+controlDiv.style.fontSize = "14px";
 
-document.getElementById("colorSelect").addEventListener("change", (e) => {
-  outlineColor = e.target.value;
+controlDiv.innerHTML = `
+  <label for="colorSelect">Outline Color:</label>
+  <select id="colorSelect">
+    <option value="white">White</option>
+    <option value="red">Red</option>
+    <option value="green">Green</option>
+    <option value="blue">Blue</option>
+    <option value="rainbow">Rainbow</option>
+  </select>
+  <button id="pauseBtn">Pause</button>
+`;
+document.body.appendChild(controlDiv);
+
+const colorSelect = document.getElementById("colorSelect");
+colorSelect.addEventListener("change", (e) => {
+  if (e.target.value === "rainbow") {
+    isRainbow = true;
+  } else {
+    isRainbow = false;
+    outlineColor = e.target.value;
+  }
 });
 
 const pauseBtn = document.getElementById("pauseBtn");
@@ -164,7 +186,16 @@ let spawnCooldown = 0;
 let frames = 0;
 let difficultyLevel = 1;
 
+function updateOutlineColor() {
+  if (isRainbow) {
+    rainbowHue = (rainbowHue + 1) % 360;
+    outlineColor = `hsl(${rainbowHue}, 100%, 50%)`;
+  }
+}
+
 function update() {
+  updateOutlineColor();
+
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   if (!paused) {
@@ -199,13 +230,11 @@ function update() {
       }
     }
 
-    // Increase difficulty every 10 seconds (~600 frames at 60fps)
     frames++;
     if (frames % 600 === 0) {
       difficultyLevel++;
     }
 
-    // Spawn new asteroids if below threshold and cooldown passed
     if (asteroids.length < 3 && spawnCooldown <= 0) {
       spawnAsteroids(4 + difficultyLevel, difficultyLevel);
       spawnCooldown = 120;
@@ -214,7 +243,6 @@ function update() {
     if (spawnCooldown > 0) spawnCooldown--;
   }
 
-  // Draw everything (even when paused)
   ship.draw();
   bullets.forEach(b => b.draw());
   asteroids.forEach(a => a.draw());
