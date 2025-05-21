@@ -152,6 +152,8 @@ function collision(a, b) {
   return dist < a.radius + b.radius;
 }
 
+let spawnCooldown = 0;
+
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -191,9 +193,13 @@ function update() {
     }
   }
 
-  if (asteroids.length < 3) {
+  // Spawn new asteroids only if cooldown expired
+  if (asteroids.length < 3 && spawnCooldown <= 0) {
     spawnAsteroids(5);
+    spawnCooldown = 120; // cooldown ~2 seconds (60fps)
   }
+
+  if (spawnCooldown > 0) spawnCooldown--;
 
   requestAnimationFrame(update);
 }
